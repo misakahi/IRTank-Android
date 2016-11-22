@@ -69,22 +69,24 @@ public class MainActivity extends Activity {
                     int left = leverToMessage(leverLeft.getValue());
                     int right = leverToMessage(leverRight.getValue());
                     int msg = ((left << 12) & 0xf000) + ((right << 8) & 0x0f00);
-                    Log.v("play", String.format("%04x", msg));
 
-                    irSound.setValue(msg);
-                    byte[] buf = irSound.getByteArray();
+                    if (msg != 0) {
+                        Log.v("play", String.format("%04x", msg));
+                        irSound.setValue16bit((short)msg);
 
-                    track.play();
-                    track.write(buf, 0, buf.length);
-                    track.stop();
-                    track.flush();
+                        byte[] buf = irSound.getByteArray();
+
+                        track.play();
+                        track.write(buf, 0, buf.length);
+                        track.stop();
+                        track.flush();
+                    }
 
                     try {
                         Thread.sleep(PLAY_INTERVAL, 0);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    count += 1;
                 }
             }
         };

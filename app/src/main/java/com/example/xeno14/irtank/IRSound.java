@@ -1,5 +1,7 @@
 package com.example.xeno14.irtank;
 
+import android.util.Log;
+
 import java.util.Arrays;
 
 /**
@@ -109,6 +111,7 @@ public class IRSound {
     // 残りを0で埋める
     Arrays.fill(buffer, offset, buffer.length, (byte) 0);
 
+    Log.v("irsound", "setValue: "+ String.format("%08x", val) + " " + offset);
     return offset;
   }
 
@@ -128,8 +131,8 @@ public class IRSound {
    * @return バッファ長
      */
   public int setValue16bit(short val) {
-    short not_val = (short)~val;
-    int val32 = (val << 16) + not_val;
+    int not_val = ~val;
+    int val32 = ((val << 16) & 0xffff0000) + (not_val & 0x0000ffff);
     return setValue32bit(val32);
   }
 
