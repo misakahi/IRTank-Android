@@ -1,4 +1,4 @@
-package com.example.xeno14.view;
+package com.example.xeno14.irtank;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -18,6 +19,7 @@ public class LeverSwitchView extends View {
     float touchY;
     Paint paint = new Paint(Color.GRAY);
     Callback onDownCallback, onMoveCallback, onUpCallback;
+    int myWidth = 0, myHeight = 0;
 
     public LeverSwitchView(Context context, AttributeSet attr){
         super(context, attr);
@@ -41,14 +43,22 @@ public class LeverSwitchView extends View {
     }
 
     private void init() {
-        touchY = this.getHeight() / 2;
+        touchY = myHeight / 2;
         onUpCallback = new DummyCallback();
         onDownCallback = new DummyCallback();
         onMoveCallback = new DummyCallback();
     }
 
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        myWidth = w;
+        myHeight = h;
+
+        touchY = myHeight / 2;
+    }
+
     public float getBarHeight() {
-        return this.getHeight() / 4;
+        return myHeight / 4;
     }
 
     public float getYmin() {
@@ -56,7 +66,7 @@ public class LeverSwitchView extends View {
     }
 
     public float getYmax() {
-        return this.getHeight() - this.getYmin();
+        return myHeight - this.getYmin();
     }
 
     private float restrictTouchY(float y) {
@@ -85,11 +95,11 @@ public class LeverSwitchView extends View {
                 onMoveCallback.apply(getValue());
                 break;
             case MotionEvent.ACTION_UP:
-                touchY = this.getHeight()/2;
+                touchY = myHeight/2;
                 onUpCallback.apply(getValue());
                 break;
             case MotionEvent.ACTION_CANCEL:
-                touchY = this.getHeight()/2;
+                touchY = myHeight/2;
                 onUpCallback.apply(getValue());
                 break;
         }
@@ -99,7 +109,7 @@ public class LeverSwitchView extends View {
 
     public float getValue() {
         float ymin = this.getBarHeight() / 2;
-        float ymax = this.getHeight() - this.getBarHeight() / 2;
+        float ymax = myHeight - this.getBarHeight() / 2;
         float val = (touchY - ymin) / (ymax - ymin);     // map to [0,1]
         val = val * 2 - 1;      //map to [-1, 1]
         val *= -1;              // touch coordinate is opposite to math

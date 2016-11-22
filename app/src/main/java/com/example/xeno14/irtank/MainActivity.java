@@ -5,7 +5,6 @@ import android.media.AudioFormat;
 import android.media.AudioTrack;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MotionEvent;
 
 import static android.media.AudioManager.STREAM_MUSIC;
 
@@ -23,16 +22,26 @@ public class MainActivity extends Activity {
     private int count = 0;
 
     private IRSound irSound = new IRSound();
+    private LeverSwitchView leverLeft, leverRight;
+
+    private static final int PLAY_INTERVAL = 200;  // ms
 
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
+        setContentView(R.layout.activity_main);
 
+        leverLeft = (LeverSwitchView)findViewById(R.id.lever_left);
+        leverRight = (LeverSwitchView)findViewById(R.id.lever_right);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
+        leverLeft.invalidate();
+        leverRight.invalidate();
+
         track = new AudioTrack(STREAM_TYPE, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, BUFFER_SIZE, MODE);
         startBackgroundThread();
     }
@@ -45,15 +54,25 @@ public class MainActivity extends Activity {
         super.onPause();
     }
 
+    private int leverToMessage(float leverval) {
+        int direction = leverval >= 0 ? (byte)0 : (byte)1;
+        int value = (int)(7 * Math.abs(leverval));
+        return ((direction << 3) & 0x8) + (value & 0x7);
+    }
+
     private void startBackgroundThread() {
         running = true;
         backgroundThread = new Thread() {
             @Override
             public void run() {
-                while (running) {
-                    irSound.setValue(count);
+                while (running && track != null) {
+                    int left = leverToMessage(leverLeft.getValue());
+                    int right = leverToMessage(leverRight.getValue());
+                    int msg = ((left << 12) & 0xf000) + ((right << 8) & 0x0f00);
+                    Log.v("play", String.format("%04x", msg));
+
+                    irSound.setValue(msg);
                     byte[] buf = irSound.getByteArray();
-                    Log.v("track", "play " + count);
 
                     track.play();
                     track.write(buf, 0, buf.length);
@@ -61,10 +80,9 @@ public class MainActivity extends Activity {
                     track.flush();
 
                     try {
-                        Thread.sleep(1000, 0);
+                        Thread.sleep(PLAY_INTERVAL, 0);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        //Log.e("track", e.printStackTrace());
                     }
                     count += 1;
                 }
@@ -73,20 +91,7 @@ public class MainActivity extends Activity {
         backgroundThread.start();
     }
 
-
     private void stopBackgroundThread() {
-        running = false;
         track.stop();
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                break;
-            case MotionEvent.ACTION_UP:
-                break;
-        }
-        return super.onTouchEvent(event);
     }
 }
